@@ -1,0 +1,21 @@
+﻿@model MoviesIndexViewModel
+<div class="row">
+    @foreach(var movie in Model.Movies)
+    { 
+        <div class="col-lg-4">
+            <div class="card" style="width: 18rem;">
+                <!--tips: add .text-center,.text-right to the .card to change card text alignment-->
+                <img src="~/images/movies/@movie.Image" class="card-img-top" alt="...">
+                <div class="card-body">
+                    <h5 class="card-title">@movie.Name</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">@movie.Company.Name</h6>
+                    <a asp-controller="Movies" 
+                       asp-action="ShowInfo" asp-route-id="@movie.Id" class="btn btn-primary">Info</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+

@@ -26,5 +26,6 @@ namespace Wba.Oefening.RateAMovie.Core.Entities
         public ICollection<Actor> Actors { get; set; }
 
         public ICollection<Director> Directors { get; set; }
+
     }
 }
