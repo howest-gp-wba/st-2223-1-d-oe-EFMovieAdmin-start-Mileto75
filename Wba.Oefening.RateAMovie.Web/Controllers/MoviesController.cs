@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Wba.Oefening.RateAMovie.Web.Data;
@@ -88,6 +90,39 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
             }
             //pass to the view
             return View(moviesShowMovieInfoViewModel);
+        }
+        [HttpGet]
+        public async Task<IActionResult> Add()
+        {
+            MoviesAddViewModel moviesAddViewModel = new MoviesAddViewModel
+            {
+                Actors = await _movieContext
+                            .Actors.Select
+                            (a => new PersonCheckbox
+                            {
+                                Id = a.Id,
+                                Name = $"{a.FirstName} {a.LastName}"
+                            }).ToListAsync(),
+                Directors = await _movieContext
+                            .Directors.Select(d => new SelectListItem
+                            {
+                                Value = d.Id.ToString(),
+                                Text = $"{d.FirstName} {d.LastName}"
+                            }).ToListAsync(),
+                Companies = await _movieContext
+                            .Companies.Select(c => new SelectListItem
+                            {
+                                Value = c.Id.ToString(),
+                                Text = $"{c.Name}"
+                            }).ToListAsync(),
+                ReleaseDate = DateTime.Now,
+            };
+            return View(moviesAddViewModel);
+        }
+        [HttpPost]
+        public async Task<IActionResult> Add(MoviesAddViewModel moviesAddViewModel)
+        {
+
         }
     }
 }
