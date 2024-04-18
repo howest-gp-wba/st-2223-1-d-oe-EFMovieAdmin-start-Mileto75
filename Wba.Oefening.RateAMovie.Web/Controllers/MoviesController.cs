@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Wba.Oefening.RateAMovie.Core.Entities;
 using Wba.Oefening.RateAMovie.Web.Data;
 using Wba.Oefening.RateAMovie.Web.Models;
 using Wba.Oefening.RateAMovie.Web.ViewModels;
@@ -13,10 +15,12 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
     public class MoviesController : Controller
     {
         private MovieContext _movieContext;
+        private readonly ILogger<MoviesController> _logger;
 
-        public MoviesController(MovieContext movieContext)
+        public MoviesController(MovieContext movieContext, ILogger<MoviesController> logger)
         {
             _movieContext = movieContext;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index()
@@ -115,14 +119,71 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
                                 Value = c.Id.ToString(),
                                 Text = $"{c.Name}"
                             }).ToListAsync(),
-                ReleaseDate = DateTime.Now,
+                ReleaseDate = DateTime.Now
             };
             return View(moviesAddViewModel);
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Add(MoviesAddViewModel moviesAddViewModel)
         {
-
+            //custom validation
+            if(moviesAddViewModel.ReleaseDate > DateTime.Now)
+            {
+                ModelState.AddModelError("ReleaseDate", "Date must be in the past!");
+            }
+            //model validation
+            if(!ModelState.IsValid)
+            {
+                //return model to the view
+                moviesAddViewModel.Actors = await _movieContext
+                            .Actors.Select
+                            (a => new PersonCheckbox
+                            {
+                                Id = a.Id,
+                                Name = $"{a.FirstName} {a.LastName}"
+                            }).ToListAsync();
+                moviesAddViewModel.Directors = await _movieContext
+                            .Directors.Select(d => new SelectListItem
+                            {
+                                Value = d.Id.ToString(),
+                                Text = $"{d.FirstName} {d.LastName}"
+                            }).ToListAsync();
+                moviesAddViewModel.Companies = await _movieContext
+                            .Companies.Select(c => new SelectListItem
+                            {
+                                Value = c.Id.ToString(),
+                                Text = $"{c.Name}"
+                            }).ToListAsync();
+                return View(moviesAddViewModel);
+            }
+            //create movie
+            var selectedActorIds = moviesAddViewModel
+                .Actors.Where(a => a.Selected == true).Select(a => a.Id);
+            var newMovie = new Movie 
+            {
+                Title = moviesAddViewModel.Title,
+                ReleaseDate = moviesAddViewModel.ReleaseDate,
+                CompanyId = moviesAddViewModel.SelectedCompanyId,
+                Directors = await _movieContext
+                            .Directors.Where(d => moviesAddViewModel
+                            .SelectedDirectorIds.Contains(d.Id)).ToListAsync(),
+                Actors = await _movieContext
+                            .Actors.Where(d => selectedActorIds.Contains(d.Id)).ToListAsync(),
+            };
+            //add to context
+            _movieContext.Movies.Add(newMovie);
+            //save the changes
+            try 
+            {
+                await _movieContext.SaveChangesAsync();
+            }
+            catch (DbUpdateException dbUpdateException)
+            {
+                _logger.LogError(dbUpdateException.Message);
+                return View("Error", new ErrorViewModel { ErrorMessage = "Movie not created!" });
+            }
+            return RedirectToAction("Index");
         }
     }
 }
