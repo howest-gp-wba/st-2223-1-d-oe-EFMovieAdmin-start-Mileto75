@@ -433,5 +433,23 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
             }
             return RedirectToAction("Index");
         }
+        [HttpGet]
+        public async Task<IActionResult> Delete(long id)
+        {
+            var movie = await _movieContext
+                .Movies.FirstOrDefaultAsync(m => m.Id == id);
+            if(movie == null)
+            {
+                Response.StatusCode = 404;
+                return View("Error", new ErrorViewModel { ErrorMessage = "Movie not found!" });
+            }
+            MoviesDeleteViewModel moviesDeleteViewModel
+                = new MoviesDeleteViewModel
+                {
+                    Id = movie.Id,
+                    Name = movie.Title
+                };
+            return View(moviesDeleteViewModel);
+        }
     }
 }
