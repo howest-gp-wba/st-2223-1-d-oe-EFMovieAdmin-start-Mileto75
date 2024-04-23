@@ -7,12 +7,12 @@ using Wba.Oefening.RateAMovie.Web.Models;
 
 namespace Wba.Oefening.RateAMovie.Web.ViewModels
 {
-    public class MoviesAddViewModel
+    public class MoviesAddViewModel 
     {
         [Required]
         public string Title { get; set; }
         [DataType(DataType.Date)]
-        public DateTime ReleaseDate { get; set; }
+        public DateTime? ReleaseDate { get; set; }
         public IEnumerable<SelectListItem> Companies { get; set; }
         public long SelectedCompanyId { get; set; }
         public IEnumerable<SelectListItem> Directors { get; set; }

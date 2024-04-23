@@ -70,6 +70,7 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
             //fill the model
             var moviesShowMovieInfoViewModel = new MoviesShowInfoViewModel
             {
+                Id = id,
                 Name = movie.Title,
                 Company = new BaseViewModel
                 {
@@ -250,6 +251,60 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
                 return View("Error", new ErrorViewModel { ErrorMessage = "Movie not created!" });
             }
             return RedirectToAction("Index");
+        }
+        [HttpGet]
+        public async Task<IActionResult> Update(long id)
+        {
+            var movie = await _movieContext
+                .Movies
+                .Include(m => m.Company)
+                .Include(m => m.Actors)
+                .Include(m => m.Directors)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if(movie == null)
+            {
+                Response.StatusCode = 404;
+                return View("Error",new ErrorViewModel { ErrorMessage = "Movie not found!" });
+            }
+            var moviesUpdateViewModel = new MoviesUpdateViewModel
+            {
+                Id = movie.Id,
+                Title = movie.Title,
+                Actors = await _movieContext
+                .Actors.Select(a => new PersonCheckbox
+                {
+                    Id = a.Id,
+                    Name = $"{a.FirstName} {a.LastName}"
+                }).ToListAsync(),
+                Directors = await _movieContext.Directors.Select(d => new SelectListItem
+                {
+                    Text = $"{d.FirstName} {d.LastName}",
+                    Value = d.Id.ToString()
+                }).ToListAsync(),
+                Companies = await _movieContext.Companies.Select(c => new SelectListItem
+                {
+                    Text = c.Name,
+                    Value = c.Id.ToString()
+                }).ToListAsync(),
+                ImagePath = movie.ImageFileName,
+                ReleaseDate = movie.ReleaseDate,
+                SelectedCompanyId = movie.CompanyId,
+                SelectedDirectorIds = movie.Directors
+                .Select(d => d.Id)
+            };
+            //select the checkboxes
+            foreach(var actor in movie.Actors)
+            {
+                moviesUpdateViewModel.Actors.First(a => a.Id == actor.Id)
+                    .Selected = true;
+            }
+            return View(moviesUpdateViewModel);
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Update(MoviesUpdateViewModel moviesUpdateViewModel)
+        {
+            
         }
     }
 }
