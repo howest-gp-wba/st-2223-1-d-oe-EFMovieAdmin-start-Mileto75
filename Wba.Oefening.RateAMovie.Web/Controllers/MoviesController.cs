@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Wba.Oefening.RateAMovie.Core.Entities;
@@ -16,11 +18,13 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
     {
         private MovieContext _movieContext;
         private readonly ILogger<MoviesController> _logger;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public MoviesController(MovieContext movieContext, ILogger<MoviesController> logger)
+        public MoviesController(MovieContext movieContext, ILogger<MoviesController> logger, IWebHostEnvironment webHostEnvironment)
         {
             _movieContext = movieContext;
             _logger = logger;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         public async Task<IActionResult> Index()
@@ -171,10 +175,72 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
                 Actors = await _movieContext
                             .Actors.Where(d => selectedActorIds.Contains(d.Id)).ToListAsync(),
             };
+            //check for image
+            if(moviesAddViewModel.Image != null)
+            {
+                //handle image
+                //create unique filename
+                var fileName = $"{Guid.NewGuid()}_{moviesAddViewModel.Image.FileName}";
+                //build path to store file
+                var pathToImageFolder = Path.Combine(_webHostEnvironment.WebRootPath,"images","movies");
+                //check if path exists
+                if(!Directory.Exists(pathToImageFolder))
+                {
+                    //create directory
+                    try
+                    {
+                        Directory.CreateDirectory(pathToImageFolder);
+                    }
+                    catch(DirectoryNotFoundException directoryNotFoundException)
+                    {
+                        _logger.LogCritical(directoryNotFoundException.Message);
+                        ModelState.AddModelError("", "Something went wrong, please try again later");
+                    }
+                }
+                //copy file to full path
+                var fullPathToFile = Path.Combine(pathToImageFolder, fileName);
+                using(FileStream fileStream = new FileStream(fullPathToFile,FileMode.CreateNew))
+                {
+                    try
+                    {
+                        await moviesAddViewModel.Image.CopyToAsync(fileStream);
+                    }
+                    catch (FileNotFoundException fileNotFoundException)
+                    {
+                        _logger.LogCritical(fileNotFoundException.Message);
+                        ModelState.AddModelError("", "Something went wrong, please try again later");
+                    }
+                }
+                if(!ModelState.IsValid)
+                {
+                    moviesAddViewModel.Actors = await _movieContext
+                            .Actors.Select
+                            (a => new PersonCheckbox
+                            {
+                                Id = a.Id,
+                                Name = $"{a.FirstName} {a.LastName}"
+                            }).ToListAsync();
+                    moviesAddViewModel.Directors = await _movieContext
+                                .Directors.Select(d => new SelectListItem
+                                {
+                                    Value = d.Id.ToString(),
+                                    Text = $"{d.FirstName} {d.LastName}"
+                                }).ToListAsync();
+                    moviesAddViewModel.Companies = await _movieContext
+                                .Companies.Select(c => new SelectListItem
+                                {
+                                    Value = c.Id.ToString(),
+                                    Text = $"{c.Name}"
+                                }).ToListAsync();
+                    return View(moviesAddViewModel);
+                }
+                //add filename to movie entity
+                newMovie.ImageFileName = fileName;
+            }
             //add to context
             _movieContext.Movies.Add(newMovie);
             //save the changes
-            try 
+            try
             {
                 await _movieContext.SaveChangesAsync();
             }

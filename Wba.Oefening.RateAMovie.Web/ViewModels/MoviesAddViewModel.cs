@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -16,6 +17,8 @@ namespace Wba.Oefening.RateAMovie.Web.ViewModels
         public long SelectedCompanyId { get; set; }
         public IEnumerable<SelectListItem> Directors { get; set; }
         public IEnumerable<long> SelectedDirectorIds { get; set;}
+        //for file upload
+        public IFormFile Image { get; set; }
         public List<PersonCheckbox> Actors { get; set; }
     }
 }

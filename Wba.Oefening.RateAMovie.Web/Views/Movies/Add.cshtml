@@ -2,36 +2,41 @@
 
 <div class="row">
     <div class="col-lg-1 col-lg-5 mx-auto border border-1 rounded rounded-3">
-        <form asp-controller="Movies" asp-action="Add" method="post">
-                    <div class="form-group">
-                        <label asp-for="Title"></label>
-                        <input asp-for="Title" class="form-control">
-                        <span asp-validation-for="Title" class="text-danger"></span>
-                    </div>
-                    <div class="form-group">
-                        <label asp-for="ReleaseDate"></label>
-                        <input asp-for="ReleaseDate" class="form-control">
-                        <span asp-validation-for="ReleaseDate" class="text-danger"></span>
-                    </div>
-                    <div class="form-group">
-                        <label asp-for="SelectedCompanyId">Companies</label>
-                        <select asp-for="SelectedCompanyId" asp-items="@Model.Companies" class="form-select"></select>
-                    </div>
-                    <div class="form-group">
-                        <label asp-for="SelectedDirectorIds">Directors</label>
-                        <select asp-for="SelectedDirectorIds" asp-items="@Model.Directors" class="form-select"></select>
-                    </div>
-                    <div class="form-group">
-                        @for (int i = 0; i < Model.Actors.Count; i++)
-                        {
-                            <label asp-for="@Model.Actors[i].Id">@Model.Actors[i].Name</label>
-                            <input asp-for="@Model.Actors[i].Selected" class="checkbox-inline"/>
-                            <input asp-for="@Model.Actors[i].Id"/>
-                        }
+        <form asp-controller="Movies" asp-action="Add" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label asp-for="Title"></label>
+                <input asp-for="Title" class="form-control">
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ReleaseDate"></label>
+                <input asp-for="ReleaseDate" class="form-control">
+                <span asp-validation-for="ReleaseDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SelectedCompanyId">Companies</label>
+                <select asp-for="SelectedCompanyId" asp-items="@Model.Companies" class="form-select"></select>
+            </div>
+            <div class="form-group">
+                <label asp-for="SelectedDirectorIds">Directors</label>
+                <select asp-for="SelectedDirectorIds" asp-items="@Model.Directors" class="form-select"></select>
+            </div>
+            <div class="form-group">
+                @for (int i = 0; i < Model.Actors.Count; i++)
+                {
+                    <label asp-for="@Model.Actors[i].Id">@Model.Actors[i].Name</label>
+                    <input asp-for="@Model.Actors[i].Selected" class="checkbox-inline" />
+                    <input asp-for="@Model.Actors[i].Id" />
+                }
 
-                    </div>
-                    <button type="submit" class="btn btn-primary">Add</button>
-                </form>
+            </div>
+            <div class="form-group">
+                <label asp-for="Image"></label>
+                <input asp-for="Image" class="form-control">
+                <span asp-validation-for="Image" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Add</button>
+        </form>
             </div>
         </div>
     
