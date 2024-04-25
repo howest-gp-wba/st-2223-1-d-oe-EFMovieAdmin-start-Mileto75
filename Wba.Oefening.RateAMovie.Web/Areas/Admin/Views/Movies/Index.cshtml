@@ -11,8 +11,6 @@
                     <h5 class="card-title">@movie.Name</h5>
                     <h6 class="card-subtitle mb-2 text-muted">@movie.Company.Name</h6>
                     <a asp-controller="Movies"
-                       asp-action="ShowInfo" asp-route-id="@movie.Id" class="btn btn-primary">Info</a>
-                    <a asp-controller="Movies"
                        asp-action="Update" asp-route-id="@movie.Id" class="btn btn-info">Edit</a>
                     <a asp-controller="Movies"
                        asp-action="Delete" asp-route-id="@movie.Id" class="btn btn-danger">Delete</a>
