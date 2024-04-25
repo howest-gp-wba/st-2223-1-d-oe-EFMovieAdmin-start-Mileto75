@@ -1,10 +1,8 @@
-﻿@model MoviesUpdateViewModel
-<div class="row border border-1 m-2">
-    <div class="col col-lg-4">
-        <img src="~/images/movies/@Model.ImagePath" class="card-img-top"/>
-    </div>
-    <div class="col col-lg-4 mx-auto">
-        <form asp-controller="Movies" asp-action="Update" method="post" enctype="multipart/form-data">
+﻿@model MoviesAddViewModel
+
+<div class="row">
+    <div class="col-lg-1 col-lg-5 mx-auto border border-1 rounded rounded-3">
+        <form asp-controller="Movies" asp-action="Add" method="post" enctype="multipart/form-data">
             <div class="form-group">
                 <label asp-for="Title"></label>
                 <input asp-for="Title" class="form-control">
@@ -38,8 +36,7 @@
                 <span asp-validation-for="Image" class="text-danger"></span>
             </div>
             <button type="submit" class="btn btn-primary">Add</button>
-            <input asp-for="Id" />
         </form>
-    </div>
-</div>
-   
+            </div>
+        </div>
+    
