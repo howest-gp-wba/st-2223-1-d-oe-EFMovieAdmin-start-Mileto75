@@ -1,7 +1,26 @@
-﻿
-@{
-    ViewData["Title"] = "Index";
-}
+﻿@model MoviesDeleteViewModel
+    <a asp-controller="Movies" asp-action="Add" class="btn btn-outline-info">Add</a>
+<div class="row">
+    @foreach(var movie in Model.Movies)
+    { 
+        <div class="col-lg-4">
+            <div class="card" style="width: 18rem;">
+                <!--tips: add .text-center,.text-right to the .card to change card text alignment-->
+                <img src="~/images/movies/@movie.Image" asp-append-version="true" class="card-img-top" alt="...">
+                <div class="card-body">
+                    <h5 class="card-title">@movie.Name</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">@movie.Company.Name</h6>
+                    <a asp-controller="Movies"
+                       asp-action="ShowInfo" asp-route-id="@movie.Id" class="btn btn-primary">Info</a>
+                    <a asp-controller="Movies"
+                       asp-action="Update" asp-route-id="@movie.Id" class="btn btn-info">Edit</a>
+                    <a asp-controller="Movies"
+                       asp-action="Delete" asp-route-id="@movie.Id" class="btn btn-danger">Delete</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
 
-<h2>Index</h2>
+
 
