@@ -13,7 +13,9 @@
                     <a asp-controller="Movies"
                        asp-action="ShowInfo" asp-route-id="@movie.Id" class="btn btn-primary">Info</a>
                     <a asp-controller="Movies"
-                       asp-action="Update" asp-route-id="@movie.Id" class="btn btn-primary">Edit</a>
+                       asp-action="Update" asp-route-id="@movie.Id" class="btn btn-info">Edit</a>
+                    <a asp-controller="Movies"
+                       asp-action="Delete" asp-route-id="@movie.Id" class="btn btn-danger">Delete</a>
                 </div>
             </div>
         </div>

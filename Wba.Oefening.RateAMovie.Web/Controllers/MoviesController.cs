@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -450,6 +451,35 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
                     Name = movie.Title
                 };
             return View(moviesDeleteViewModel);
+        }
+        [HttpPost]
+        public async Task<IActionResult> Delete(MoviesDeleteViewModel moviesDeleteViewModel)
+        {
+            //get the movie
+            var movie = await _movieContext
+                .Movies
+                .FirstOrDefaultAsync(m => m.Id == moviesDeleteViewModel.Id);
+            //check if null
+            if(movie == null)
+            {
+                Response.StatusCode = 404;
+                return View("Error", new ErrorViewModel { ErrorMessage = "Movie not found!" });
+            }
+            //delete the movie
+                //remove from context
+            _movieContext.Movies.Remove(movie);
+            //save the changes
+            try 
+            {
+                await _movieContext.SaveChangesAsync();
+            }
+            catch(DbUpdateException dbUpdateException)
+            {
+                _logger.LogError(dbUpdateException.Message);
+            }
+
+            //redirect to index
+            return RedirectToAction("Index");
         }
     }
 }

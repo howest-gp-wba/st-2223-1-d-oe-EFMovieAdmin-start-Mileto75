@@ -3,7 +3,7 @@
     <div class="alert alert-danger" role="alert">
         <p>Are you sure you want to delete the movie @Model.Name?</p>
         <button type="submit" class="btn btn-danger">Yes</button>
-        <a asp-controller="Movies" asp-action="Delete"class="btn btn-primary">No</a>
+        <a asp-controller="Movies" asp-action="Index"class="btn btn-primary">No</a>
         <input type="hidden" asp-for="Id" />
     </div>
 </form>
