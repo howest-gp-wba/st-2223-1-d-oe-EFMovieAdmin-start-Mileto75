@@ -28,6 +28,11 @@ app.UseRouting();
 
 app.UseAuthorization();
 
+//area route
+app.MapControllerRoute(
+            name: "areas",
+            pattern: "{area:exists}/{controller=Movies}/{action=Index}/{id?}"
+          );
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Wba.Oefening.RateAMovie.Web.ViewModels
+namespace Wba.Oefening.RateAMovie.Web.Areas.Admin.ViewModels
 {
     public class MoviesUpdateViewModel : MoviesAddViewModel
     {

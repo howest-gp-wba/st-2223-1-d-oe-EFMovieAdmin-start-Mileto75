@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Wba.Oefening.RateAMovie.Core.Entities;
+using Wba.Oefening.RateAMovie.Web.Areas.Admin.ViewModels;
 using Wba.Oefening.RateAMovie.Web.Data;
 using Wba.Oefening.RateAMovie.Web.Models;
 using Wba.Oefening.RateAMovie.Web.ViewModels;
