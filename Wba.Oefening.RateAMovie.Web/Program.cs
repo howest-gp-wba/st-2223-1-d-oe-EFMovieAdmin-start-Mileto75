@@ -4,12 +4,16 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Wba.Oefening.RateAMovie.Web.Data;
+using Wba.Oefening.RateAMovie.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<MovieContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("MovieDb")));
+//own services
+builder.Services.AddScoped<IFormBuilderService,FormBuilderService>();
+builder.Services.AddScoped<IFileService,FileService>();
+builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 

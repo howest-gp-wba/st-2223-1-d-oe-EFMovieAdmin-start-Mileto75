@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Wba.Oefening.RateAMovie.Core.Entities;
 using Wba.Oefening.RateAMovie.Web.Data;
 using Wba.Oefening.RateAMovie.Web.Models;
+using Wba.Oefening.RateAMovie.Web.Services;
 using Wba.Oefening.RateAMovie.Web.ViewModels;
 
 namespace Wba.Oefening.RateAMovie.Web.Controllers
@@ -20,27 +21,31 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
         private MovieContext _movieContext;
         private readonly ILogger<MoviesController> _logger;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IFormBuilderService _formBuilderService;
+        private readonly IFileService _fileService;
 
-        public MoviesController(MovieContext movieContext, ILogger<MoviesController> logger, IWebHostEnvironment webHostEnvironment)
+        public MoviesController(MovieContext movieContext, ILogger<MoviesController> logger, IWebHostEnvironment webHostEnvironment, IFormBuilderService formBuilderService, IFileService fileService)
         {
             _movieContext = movieContext;
             _logger = logger;
             _webHostEnvironment = webHostEnvironment;
+            _formBuilderService = formBuilderService;
+            _fileService = fileService;
         }
 
         public async Task<IActionResult> Index()
         {
             //show a list of movies
             var moviesIndexViewModel = new MoviesIndexViewModel
-            { 
+            {
                 Movies = await _movieContext.Movies
                 .Include(m => m.Company)
                 .Select(m =>
-                new MoviesShowInfoViewModel 
+                new MoviesShowInfoViewModel
                 {
                     Id = m.Id,
                     Name = m.Title,
-                    Company = new BaseViewModel 
+                    Company = new BaseViewModel
                     {
                         Id = m.Company.Id,
                         Name = m.Company.Name,
@@ -61,12 +66,12 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
                 .Include(m => m.Ratings)
                 .FirstOrDefaultAsync(m => m.Id == id);
             //check if null
-            if(movie == null)
+            if (movie == null)
             {
                 var errorViewModel =
                     new ErrorViewModel { ErrorMessage = "Movie not found!" };
                 Response.StatusCode = 404;
-                return View("Error",errorViewModel);
+                return View("Error", errorViewModel);
             }
             //fill the model
             var moviesShowMovieInfoViewModel = new MoviesShowInfoViewModel
@@ -93,7 +98,7 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
                     Name = $"{d.FirstName} {d.LastName}"
                 }),
             };
-            if(movie.Ratings.Count > 0)
+            if (movie.Ratings.Count > 0)
             {
                 moviesShowMovieInfoViewModel.AverageRating
                     = movie.Ratings.Average(m => m.Score);
@@ -106,25 +111,9 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
         {
             MoviesAddViewModel moviesAddViewModel = new MoviesAddViewModel
             {
-                Actors = await _movieContext
-                            .Actors.Select
-                            (a => new PersonCheckbox
-                            {
-                                Id = a.Id,
-                                Name = $"{a.FirstName} {a.LastName}"
-                            }).ToListAsync(),
-                Directors = await _movieContext
-                            .Directors.Select(d => new SelectListItem
-                            {
-                                Value = d.Id.ToString(),
-                                Text = $"{d.FirstName} {d.LastName}"
-                            }).ToListAsync(),
-                Companies = await _movieContext
-                            .Companies.Select(c => new SelectListItem
-                            {
-                                Value = c.Id.ToString(),
-                                Text = $"{c.Name}"
-                            }).ToListAsync(),
+                Actors = await _formBuilderService.GetPersonCheckboxes(),
+                Directors = await _formBuilderService.GetDirectors(),
+                Companies = await _formBuilderService.GetCompanies(),
                 ReleaseDate = DateTime.Now
             };
             return View(moviesAddViewModel);
@@ -134,39 +123,23 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
         public async Task<IActionResult> Add(MoviesAddViewModel moviesAddViewModel)
         {
             //custom validation
-            if(moviesAddViewModel.ReleaseDate > DateTime.Now)
+            if (moviesAddViewModel.ReleaseDate > DateTime.Now)
             {
                 ModelState.AddModelError("ReleaseDate", "Date must be in the past!");
             }
             //model validation
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 //return model to the view
-                moviesAddViewModel.Actors = await _movieContext
-                            .Actors.Select
-                            (a => new PersonCheckbox
-                            {
-                                Id = a.Id,
-                                Name = $"{a.FirstName} {a.LastName}"
-                            }).ToListAsync();
-                moviesAddViewModel.Directors = await _movieContext
-                            .Directors.Select(d => new SelectListItem
-                            {
-                                Value = d.Id.ToString(),
-                                Text = $"{d.FirstName} {d.LastName}"
-                            }).ToListAsync();
-                moviesAddViewModel.Companies = await _movieContext
-                            .Companies.Select(c => new SelectListItem
-                            {
-                                Value = c.Id.ToString(),
-                                Text = $"{c.Name}"
-                            }).ToListAsync();
+                moviesAddViewModel.Actors = await _formBuilderService.GetPersonCheckboxes();
+                moviesAddViewModel.Directors = await _formBuilderService.GetDirectors();
+                moviesAddViewModel.Companies = await _formBuilderService.GetCompanies();
                 return View(moviesAddViewModel);
             }
             //create movie
             var selectedActorIds = moviesAddViewModel
                 .Actors.Where(a => a.Selected == true).Select(a => a.Id);
-            var newMovie = new Movie 
+            var newMovie = new Movie
             {
                 Title = moviesAddViewModel.Title,
                 ReleaseDate = moviesAddViewModel.ReleaseDate,
@@ -178,66 +151,25 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
                             .Actors.Where(d => selectedActorIds.Contains(d.Id)).ToListAsync(),
             };
             //check for image
-            if(moviesAddViewModel.Image != null)
+            if (moviesAddViewModel.Image != null)
             {
-                //handle image
-                //create unique filename
-                var fileName = $"{Guid.NewGuid()}_{moviesAddViewModel.Image.FileName}";
-                //build path to store file
-                var pathToImageFolder = Path.Combine(_webHostEnvironment.WebRootPath,"images","movies");
-                //check if path exists
-                if(!Directory.Exists(pathToImageFolder))
+                var result = await _fileService.CreateFile(moviesAddViewModel.Image);
+                if (!result.Issuccess)
                 {
-                    //create directory
-                    try
-                    {
-                        Directory.CreateDirectory(pathToImageFolder);
-                    }
-                    catch(DirectoryNotFoundException directoryNotFoundException)
-                    {
-                        _logger.LogCritical(directoryNotFoundException.Message);
-                        ModelState.AddModelError("", "Something went wrong, please try again later");
-                    }
+                    ModelState.AddModelError("", "Something went wrong!");
                 }
-                //copy file to full path
-                var fullPathToFile = Path.Combine(pathToImageFolder, fileName);
-                using(FileStream fileStream = new FileStream(fullPathToFile,FileMode.CreateNew))
+                else
                 {
-                    try
-                    {
-                        await moviesAddViewModel.Image.CopyToAsync(fileStream);
-                    }
-                    catch (FileNotFoundException fileNotFoundException)
-                    {
-                        _logger.LogCritical(fileNotFoundException.Message);
-                        ModelState.AddModelError("", "Something went wrong, please try again later");
-                    }
+                    //add filename to movie entity
+                    newMovie.ImageFileName = result.Filename;
                 }
-                if(!ModelState.IsValid)
-                {
-                    moviesAddViewModel.Actors = await _movieContext
-                            .Actors.Select
-                            (a => new PersonCheckbox
-                            {
-                                Id = a.Id,
-                                Name = $"{a.FirstName} {a.LastName}"
-                            }).ToListAsync();
-                    moviesAddViewModel.Directors = await _movieContext
-                                .Directors.Select(d => new SelectListItem
-                                {
-                                    Value = d.Id.ToString(),
-                                    Text = $"{d.FirstName} {d.LastName}"
-                                }).ToListAsync();
-                    moviesAddViewModel.Companies = await _movieContext
-                                .Companies.Select(c => new SelectListItem
-                                {
-                                    Value = c.Id.ToString(),
-                                    Text = $"{c.Name}"
-                                }).ToListAsync();
-                    return View(moviesAddViewModel);
-                }
-                //add filename to movie entity
-                newMovie.ImageFileName = fileName;
+            }
+            if (!ModelState.IsValid)
+            {
+                moviesAddViewModel.Actors = await _formBuilderService.GetPersonCheckboxes();
+                moviesAddViewModel.Directors = await _formBuilderService.GetDirectors();
+                moviesAddViewModel.Companies = await _formBuilderService.GetCompanies();
+                return View(moviesAddViewModel);
             }
             //add to context
             _movieContext.Movies.Add(newMovie);
@@ -271,22 +203,9 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
             {
                 Id = movie.Id,
                 Title = movie.Title,
-                Actors = await _movieContext
-                .Actors.Select(a => new PersonCheckbox
-                {
-                    Id = a.Id,
-                    Name = $"{a.FirstName} {a.LastName}"
-                }).ToListAsync(),
-                Directors = await _movieContext.Directors.Select(d => new SelectListItem
-                {
-                    Text = $"{d.FirstName} {d.LastName}",
-                    Value = d.Id.ToString()
-                }).ToListAsync(),
-                Companies = await _movieContext.Companies.Select(c => new SelectListItem
-                {
-                    Text = c.Name,
-                    Value = c.Id.ToString()
-                }).ToListAsync(),
+                Actors = await _formBuilderService.GetPersonCheckboxes(),
+                Directors = await _formBuilderService.GetDirectors(),
+                Companies = await _formBuilderService.GetCompanies(),
                 ImagePath = movie.ImageFileName,
                 ReleaseDate = movie.ReleaseDate,
                 SelectedCompanyId = movie.CompanyId,
@@ -314,25 +233,9 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
             if (!ModelState.IsValid)
             {
                 //return model to the view
-                moviesUpdateViewModel.Actors = await _movieContext
-                            .Actors.Select
-                            (a => new PersonCheckbox
-                            {
-                                Id = a.Id,
-                                Name = $"{a.FirstName} {a.LastName}"
-                            }).ToListAsync();
-                moviesUpdateViewModel.Directors = await _movieContext
-                            .Directors.Select(d => new SelectListItem
-                            {
-                                Value = d.Id.ToString(),
-                                Text = $"{d.FirstName} {d.LastName}"
-                            }).ToListAsync();
-                moviesUpdateViewModel.Companies = await _movieContext
-                            .Companies.Select(c => new SelectListItem
-                            {
-                                Value = c.Id.ToString(),
-                                Text = $"{c.Name}"
-                            }).ToListAsync();
+                moviesUpdateViewModel.Actors = await _formBuilderService.GetPersonCheckboxes();
+                moviesUpdateViewModel.Directors = await _formBuilderService.GetDirectors();
+                moviesUpdateViewModel.Companies = await _formBuilderService.GetCompanies();
                 return View(moviesUpdateViewModel);
             }
             //get the movie
@@ -466,7 +369,9 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
                 return View("Error", new ErrorViewModel { ErrorMessage = "Movie not found!" });
             }
             //delete the movie
-                //remove from context
+            //remove from context
+            //delete the image
+            var result = _fileService.DeleteFile(movie.ImageFileName,"movies");
             _movieContext.Movies.Remove(movie);
             //save the changes
             try 
@@ -477,7 +382,6 @@ namespace Wba.Oefening.RateAMovie.Web.Controllers
             {
                 _logger.LogError(dbUpdateException.Message);
             }
-
             //redirect to index
             return RedirectToAction("Index");
         }
